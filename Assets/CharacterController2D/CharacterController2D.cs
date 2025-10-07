@@ -232,76 +232,104 @@ public class CharacterController2D : MonoBehaviour
 	}
 
 
-	#region Public
+        #region Public
 
-	/// <summary>
-	/// attempts to move the character to position + deltaMovement. Any colliders in the way will cause the movement to
-	/// stop when run into.
-	/// </summary>
-	/// <param name="deltaMovement">Delta movement.</param>
-	public void move( Vector3 deltaMovement )
-	{
-		// save off our current grounded state which we will use for wasGroundedLastFrame and becameGroundedThisFrame
-		collisionState.wasGroundedLastFrame = collisionState.below;
+        /// <summary>
+        /// attempts to move the character to position + deltaMovement. Any colliders in the way will cause the movement to
+        /// stop when run into.
+        /// </summary>
+        /// <param name="deltaMovement">Delta movement.</param>
+        public void move(Vector3 deltaMovement)
+        {
+            #region Manage Collision States
+            // save off our current grounded state which we will use for wasGroundedLastFrame and becameGroundedThisFrame
+            collisionState.wasGroundedLastFrame = collisionState.below;
 
-		// clear our state
-		collisionState.reset();
-		_raycastHitsThisFrame.Clear();
-		_isGoingUpSlope = false;
-
-		primeRaycastOrigins();
-
-
-		// first, we check for a slope below us before moving
-		// only check slopes if we are going down and grounded
-		if( deltaMovement.y < 0f && collisionState.wasGroundedLastFrame )
-			handleVerticalSlope( ref deltaMovement );
-
-		// now we check movement in the horizontal dir
-		if( deltaMovement.x != 0f )
-			moveHorizontally( ref deltaMovement );
-
-		// next, check movement in the vertical dir
-		if( deltaMovement.y != 0f )
-			moveVertically( ref deltaMovement );
-
-		// move then update our state
-		deltaMovement.z = 0;
-		transform.Translate( deltaMovement, Space.World );
-
-		// only calculate velocity if we have a non-zero deltaTime
-		if( Time.deltaTime > 0f )
-			velocity = deltaMovement / Time.deltaTime;
-
-		// set our becameGrounded state based on the previous and current collision state
-		if( !collisionState.wasGroundedLastFrame && collisionState.below )
-			collisionState.becameGroundedThisFrame = true;
-
-		// if we are going up a slope we artificially set a y velocity so we need to zero it out here
-		if( _isGoingUpSlope )
-			velocity.y = 0;
-
-		// send off the collision events if we have a listener
-		if( onControllerCollidedEvent != null )
-		{
-			for( var i = 0; i < _raycastHitsThisFrame.Count; i++ )
-				onControllerCollidedEvent( _raycastHitsThisFrame[i] );
-		}
-
-		ignoreOneWayPlatformsThisFrame = false;
-	}
+            // clear our state
+            collisionState.reset();
+            _raycastHitsThisFrame.Clear();
+            _isGoingUpSlope = false;
 
 
-	/// <summary>
-	/// moves directly down until grounded
-	/// </summary>
-	public void warpToGrounded()
-	{
-		do
-		{
-			move( new Vector3( 0, -1f, 0 ) );
-		} while( !isGrounded );
-	}
+            #endregion
+
+            #region Set up Raycast Positions
+            primeRaycastOrigins();
+            #endregion
+
+            #region check for vertical slope if on ground and descending
+
+            // first, we check for a slope below us before moving
+            // only check slopes if we are going down and grounded
+            if (deltaMovement.y < 0f && collisionState.wasGroundedLastFrame)
+                handleVerticalSlope(ref deltaMovement);
+            #endregion
+
+            #region move horizontally
+            // now we check movement in the horizontal dir
+            if (deltaMovement.x != 0f)
+                moveHorizontally(ref deltaMovement);
+            #endregion
+
+            #region Move Vertically
+            // next, check movement in the vertical dir
+            if (deltaMovement.y != 0f)
+                moveVertically(ref deltaMovement);
+            #endregion
+
+            #region Move the character
+            // move then update our state
+            deltaMovement.z = 0;
+            transform.Translate(deltaMovement, Space.World);
+
+            #endregion
+
+            #region calculate current velocity
+            // only calculate velocity if we have a non-zero deltaTime
+            if (Time.deltaTime > 0f)
+                velocity = deltaMovement / Time.deltaTime;
+            #endregion
+
+            #region Set flag for being grounded this frame
+            // set our becameGrounded state based on the previous and current collision state
+            if (!collisionState.wasGroundedLastFrame && collisionState.below)
+                collisionState.becameGroundedThisFrame = true;
+
+            #endregion
+
+            #region Fix up going up slope issues
+            // if we are going up a slope we artificially set a y velocity so we need to zero it out here
+            if (_isGoingUpSlope)
+                velocity.y = 0;
+            #endregion
+
+            #region send collision events
+            // send off the collision events if we have a listener
+            if (onControllerCollidedEvent != null)
+            {
+                for (var i = 0; i < _raycastHitsThisFrame.Count; i++)
+                    onControllerCollidedEvent(_raycastHitsThisFrame[i]);
+            }
+            #endregion
+
+            #region handle one way platform resets
+
+            ignoreOneWayPlatformsThisFrame = false;
+            #endregion
+        }
+
+
+        /// <summary>
+        /// moves directly down until grounded
+        /// </summary>
+        public void warpToGrounded()
+        {
+            do
+            {
+                move(new Vector3(0, -1f, 0));
+            }
+            while (!isGrounded);
+        }
 
 
 	/// <summary>
