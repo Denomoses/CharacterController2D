@@ -63,10 +63,13 @@ public class DemoScene : MonoBehaviour
 	// the Update loop contains a very simple example of moving the character around and controlling the animation
 	void Update()
 	{
-		if( _controller.isGrounded )
+        #region Zero out y
+        if ( _controller.isGrounded )
 			_velocity.y = 0;
+        #endregion
 
-		if( Input.GetKey( KeyCode.RightArrow ) )
+        #region horizontal inputs and move holds
+        if ( Input.GetKey( KeyCode.RightArrow ) )
 		{
 			normalizedHorizontalSpeed = 1;
 			if( transform.localScale.x < 0f )
@@ -91,35 +94,49 @@ public class DemoScene : MonoBehaviour
 			if( _controller.isGrounded )
 				_animator.Play( Animator.StringToHash( "Idle" ) );
 		}
+        #endregion
 
-
-		// we can only jump whilst grounded
-		if( _controller.isGrounded && Input.GetKeyDown( KeyCode.UpArrow ) )
+        #region handle jumping
+        // we can only jump whilst grounded
+        if ( _controller.isGrounded && Input.GetKeyDown( KeyCode.UpArrow ) )
 		{
 			_velocity.y = Mathf.Sqrt( 2f * jumpHeight * -gravity );
 			_animator.Play( Animator.StringToHash( "Jump" ) );
 		}
+        #endregion
 
-
-		// apply horizontal speed smoothing it. dont really do this with Lerp. Use SmoothDamp or something that provides more control
-		var smoothedMovementFactor = _controller.isGrounded ? groundDamping : inAirDamping; // how fast do we change direction?
+        #region horizontal velocity
+        // apply horizontal speed smoothing it. dont really do this with Lerp. Use SmoothDamp or something that provides more control
+        var smoothedMovementFactor = _controller.isGrounded ? groundDamping : inAirDamping; // how fast do we change direction?
 		_velocity.x = Mathf.Lerp( _velocity.x, normalizedHorizontalSpeed * runSpeed, Time.deltaTime * smoothedMovementFactor );
+        #endregion
 
-		// apply gravity before moving
-		_velocity.y += gravity * Time.deltaTime;
+        #region apply gravity
+        // apply gravity before moving
+        _velocity.y += gravity * Time.deltaTime;
 
-		// if holding down bump up our movement amount and turn off one way platform detection for a frame.
-		// this lets us jump down through one way platforms
-		if( _controller.isGrounded && Input.GetKey( KeyCode.DownArrow ) )
+        #endregion
+
+        #region drop through one way platforms platforms
+
+        // if holding down bump up our movement amount and turn off one way platform detection for a frame.
+        // this lets us jump down through one way platforms
+        if ( _controller.isGrounded && Input.GetKey( KeyCode.DownArrow ) )
 		{
 			_velocity.y *= 3f;
 			_controller.ignoreOneWayPlatformsThisFrame = true;
 		}
+        #endregion
 
-		_controller.move( _velocity * Time.deltaTime );
+        #region send movement
+        _controller.move( _velocity * Time.deltaTime );
 
-		// grab our current _velocity to use as a base for all calculations
-		_velocity = _controller.velocity;
-	}
+        #endregion
+
+        #region store velocity post movement
+        // grab our current _velocity to use as a base for all calculations
+        _velocity = _controller.velocity;
+        #endregion
+    }
 
 }
